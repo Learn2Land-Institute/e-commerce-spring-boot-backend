@@ -10,6 +10,10 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String productId;
+    private Double price;
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
+    @JoinColumn(name = "limitation_id")
+    private ProductLimitation productLimitation;
 
     @ManyToOne
     @JoinColumn(name = "parent_product_id")
@@ -18,8 +22,13 @@ public class Product {
     @OneToMany(mappedBy = "parentProduct", cascade = CascadeType.ALL)
     private List<Product> subProduct = new ArrayList<>();
 
-    //@OneToOne
-    //private ProductDetail productDetail;
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.LAZY)
+    @JoinColumn(name = "details_id")
+    private ProductDetail productDetail;
+
+    @OneToMany
+    private List<ProductReview> productReviewList;
+
     public void addSubProduct(Product subProduct) {
         subProduct.setParentProduct(this);
         this.subProduct.add(subProduct);

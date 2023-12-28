@@ -1,17 +1,18 @@
 package com.mm.ecommerce.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "user", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 public abstract class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String userID;
+    @Column(unique = true,nullable = false)
     private String email;
+    @Column(nullable = false)
     private String password;
 
     private String firstName;
