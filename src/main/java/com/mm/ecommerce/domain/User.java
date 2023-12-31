@@ -1,7 +1,7 @@
 package com.mm.ecommerce.domain;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -9,6 +9,11 @@ import java.time.LocalDateTime;
 @Data
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "user", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public abstract class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

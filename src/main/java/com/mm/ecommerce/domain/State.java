@@ -13,7 +13,7 @@ public class State {
     private String code;
 
     private String name;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     private Country country;
     @Embedded
     private AuditData auditData;
