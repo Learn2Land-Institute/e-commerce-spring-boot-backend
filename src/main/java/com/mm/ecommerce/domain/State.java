@@ -1,14 +1,10 @@
 package com.mm.ecommerce.domain;
 
-import jakarta.persistence.Id;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Column;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Embedded;
+import jakarta.persistence.*;
+import lombok.Data;
 
 @Entity
+@Data
 public class State {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,7 +13,7 @@ public class State {
     private String code;
 
     private String name;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     private Country country;
     @Embedded
     private AuditData auditData;

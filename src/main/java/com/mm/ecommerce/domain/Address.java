@@ -1,12 +1,10 @@
 package com.mm.ecommerce.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
+import lombok.Data;
 
 @Entity
+@Data
 public class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -18,6 +16,6 @@ public class Address {
     private String city;
 
     private String postalCode;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     private State state;
 }
