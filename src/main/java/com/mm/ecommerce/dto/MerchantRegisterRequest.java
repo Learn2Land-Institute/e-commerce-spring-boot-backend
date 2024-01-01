@@ -26,4 +26,10 @@ public class MerchantRegisterRequest {
     private String taxIdentificationNumber;
     private String businessRegistrationNumber;
 
+    //Bank information
+    private String cardNumber;
+    private String cardName;
+    private String cvvNumber;
+    private String expireDate;
+
 }

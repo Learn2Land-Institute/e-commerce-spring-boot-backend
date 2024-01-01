@@ -36,7 +36,7 @@ public class Merchant extends User{
 
     // Payment information
    // @OneToOne
- //   private BankAccount bankAccountDetails;
+    private boolean bankValidation;
 
     // Approval Status
     @Enumerated(EnumType.STRING)

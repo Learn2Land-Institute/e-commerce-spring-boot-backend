@@ -1,8 +1,8 @@
 package com.mm.ecommerce.service;
 
 import com.mm.ecommerce.domain.*;
-import com.mm.ecommerce.dto.MerchantRegisterRequest;
-import com.mm.ecommerce.dto.MerchantRegisterResponse;
+import com.mm.ecommerce.dto.*;
+import com.mm.ecommerce.enums.MerchantStatus;
 import com.mm.ecommerce.exception.InvalidInputException;
 import com.mm.ecommerce.exception.RecordNotFoundException;
 import com.mm.ecommerce.repository.MerchantRepository;
@@ -10,11 +10,18 @@ import com.mm.ecommerce.repository.StateRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,12 +32,35 @@ public class MerchantServiceImpl implements MerchantService {
     @Autowired
     StateRepository stateRepository;
 
+    @Autowired
+    RestTemplate restTemplate;
+
     private final PasswordEncoder passwordEncoder;
+
     @Transactional
     public MerchantRegisterResponse registerMerchant(MerchantRegisterRequest merchantRegisterRequest){
         System.out.println("registerMerchant");
         validateMerchantRegisterRequest(merchantRegisterRequest);
+
+        //create bank info request
+        BankInfoRequest bankInfoRequest = createBankInfoRequest(merchantRegisterRequest);
+
+        // Validate bank information and get response
+        BankInfoResponse bankInfoResponse = validateBankInformation(bankInfoRequest);
+        System.out.println(bankInfoResponse.getAmount());
+
+        // create and save merchant
+        Merchant merchant = mapMerchantRegisterRequestToMerchant(merchantRegisterRequest);
+
+        merchantRepository.save(merchant);
+
         MerchantRegisterResponse merchantRegisterResponse = new MerchantRegisterResponse();
+        merchantRegisterResponse.setMsg("success"); //will improve later
+        return merchantRegisterResponse;
+
+    }
+
+    private Merchant mapMerchantRegisterRequestToMerchant(MerchantRegisterRequest merchantRegisterRequest) {
         Merchant merchant = new Merchant();
         merchant.setFirstName(merchantRegisterRequest.getFirstName());
         merchant.setLastName(merchantRegisterRequest.getLastName());
@@ -40,41 +70,87 @@ public class MerchantServiceImpl implements MerchantService {
         merchant.setBusinessName(merchantRegisterRequest.getBusinessName());
         merchant.setBusinessType(merchantRegisterRequest.getBusinessType());
         merchant.setIndustry(merchantRegisterRequest.getIndustry());
-        List<Address> addressList = new ArrayList<>();
-        merchantRegisterRequest.getAddressList().forEach(address -> {
-            Address add = new Address();
-            add.setLine1(address.getLine1());
-            add.setLine2(address.getLine2());
-            add.setCity(address.getCity());
-            add.setPostalCode(address.getPostalCode());
-            add.setAddressType(address.getAddressType());
-            State state = stateRepository.findById(address.getStateId())
-                    .orElseThrow(() -> new RecordNotFoundException("State not found with id: " + address.getStateId()));
-            add.setState(state);
 
-            addressList.add(add);
-        });
-
+        List<Address> addressList = mapAddressList(merchantRegisterRequest.getAddressList());
         merchant.setAddressList(addressList);
-        List<PhoneNumber> phoneNumberList = new ArrayList<>();
-        if(!merchantRegisterRequest.getPhoneNumberList().isEmpty()){
-            merchantRegisterRequest.getPhoneNumberList().forEach(phoneNumber -> {
-                PhoneNumber phone = new PhoneNumber();
-                phone.setPhoneNumber(phoneNumber.getPhoneNumber());
-                phone.setPhoneNumberType(phoneNumber.getPhoneNumberType());
-                phone.setDefaultPhoneNumber(phoneNumber.isDefaultPhoneNumber());
-                phoneNumberList.add(phone);
-            });
-        }
+
+        List<PhoneNumber> phoneNumberList = mapPhoneNumberList(merchantRegisterRequest.getPhoneNumberList());
         merchant.setPhoneNumberList(phoneNumberList);
+
         merchant.setTaxIdentificationNumber(merchantRegisterRequest.getTaxIdentificationNumber());
         merchant.setBusinessRegistrationNumber(merchantRegisterRequest.getBusinessRegistrationNumber());
+        merchant.setMerchantStatus(MerchantStatus.New);
 
-        merchantRepository.save(merchant);
-        merchantRegisterResponse.setMsg("success"); //will improve later
-        return merchantRegisterResponse;
+        return merchant;
+    }
+
+    private List<Address> mapAddressList(List<AddressDTO> addressRequstList){
+        return addressRequstList.stream()
+                .map(addressRequest -> mapAddress(addressRequest)).collect(Collectors.toList());
+    }
+
+    private Address mapAddress(AddressDTO addressdto){
+        Address address = new Address();
+        address.setLine1(addressdto.getLine1());
+        address.setLine2(addressdto.getLine2());
+        address.setCity(addressdto.getCity());
+        address.setPostalCode(addressdto.getPostalCode());
+        address.setAddressType(addressdto.getAddressType());
+        State state = getStateById(addressdto.getStateId());
+        address.setState(state);
+        return address;
+    }
+
+    private State getStateById(Integer stateId){
+        return stateRepository.findById(stateId)
+                .orElseThrow(() -> new RecordNotFoundException("State not found with id: " + stateId));
+    }
+
+    private List<PhoneNumber> mapPhoneNumberList(List<PhoneDTO> phoneDTOList){
+
+        return phoneDTOList.stream()
+                .map(phoneDTO -> mapPhoneNumber(phoneDTO)).collect(Collectors.toList());
+    }
+
+    private PhoneNumber mapPhoneNumber(PhoneDTO phoneDTO){
+        PhoneNumber phone = new PhoneNumber();
+        phone.setPhoneNumber(phoneDTO.getPhoneNumber());
+        phone.setPhoneNumberType(phoneDTO.getPhoneNumberType());
+        phone.setDefaultPhoneNumber(phoneDTO.isDefaultPhoneNumber());
+        return phone;
+    }
+
+    private BankInfoRequest createBankInfoRequest(MerchantRegisterRequest merchantRegisterRequest){
+        BankInfoRequest bankInfoRequest = new BankInfoRequest();
+        bankInfoRequest.setCardNumber(merchantRegisterRequest.getCardNumber());
+        bankInfoRequest.setCardName(merchantRegisterRequest.getCardName());
+        bankInfoRequest.setCvvNumber(merchantRegisterRequest.getCvvNumber());
+        bankInfoRequest.setExpireDate(merchantRegisterRequest.getExpireDate());
+        return bankInfoRequest;
+    }
+
+    private BankInfoResponse validateBankInformation(BankInfoRequest bankInfoRequest){
+
+        try {
+            // Set up the request headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            // Create the request entity with the JSON body
+            HttpEntity<BankInfoRequest> requestEntity = new HttpEntity<>(bankInfoRequest, headers);
+
+            // Make the POST request to the other service
+            return restTemplate.postForObject("http://localhost:9001/api/v1/getCardInfo", requestEntity,
+                    BankInfoResponse.class
+            );
+        } catch (HttpClientErrorException ex) {
+            System.out.println("error record not found in bank service");
+            // Log the exception or handle it based on your requirements
+            throw new InvalidInputException("Error validating bank information");
+        }
 
     }
+
     private void validateMerchantRegisterRequest(MerchantRegisterRequest merchantRegisterRequest){
         if(merchantRegisterRequest.getFirstName() == null || merchantRegisterRequest.getFirstName().trim().isEmpty()){
             throw new InvalidInputException("FirstName is required");
