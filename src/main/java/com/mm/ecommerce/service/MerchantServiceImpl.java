@@ -17,9 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.http.HttpStatus;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -86,7 +83,7 @@ public class MerchantServiceImpl implements MerchantService {
 
     private List<Address> mapAddressList(List<AddressDTO> addressRequstList){
         return addressRequstList.stream()
-                .map(addressRequest -> mapAddress(addressRequest)).collect(Collectors.toList());
+                .map(this::mapAddress).collect(Collectors.toList());
     }
 
     private Address mapAddress(AddressDTO addressdto){
@@ -109,7 +106,7 @@ public class MerchantServiceImpl implements MerchantService {
     private List<PhoneNumber> mapPhoneNumberList(List<PhoneDTO> phoneDTOList){
 
         return phoneDTOList.stream()
-                .map(phoneDTO -> mapPhoneNumber(phoneDTO)).collect(Collectors.toList());
+                .map(this::mapPhoneNumber).collect(Collectors.toList());
     }
 
     private PhoneNumber mapPhoneNumber(PhoneDTO phoneDTO){

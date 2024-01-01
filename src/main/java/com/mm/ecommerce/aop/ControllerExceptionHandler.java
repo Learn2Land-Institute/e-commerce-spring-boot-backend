@@ -16,16 +16,12 @@ public class ControllerExceptionHandler {
     @ExceptionHandler(value = {RecordNotFoundException.class})
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
     public ErrorResponse resourceNotFoundException(RecordNotFoundException ex, WebRequest webRequest){
-        ErrorResponse message =
-                ErrorResponse.builder(ex,HttpStatus.NOT_FOUND,ex.getMessage()).build();
-        return  message;
+        return ErrorResponse.builder(ex,HttpStatus.NOT_FOUND,ex.getMessage()).build();
     }
 
     @ExceptionHandler(value = {RecordAlreadyExistsException.class, InvalidInputException.class})
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     public ErrorResponse handleRecordAlreadyExistException(Exception e, WebRequest webRequest){
-        ErrorResponse message =
-                ErrorResponse.builder(e,HttpStatus.BAD_REQUEST,e.getMessage()).build();
-        return message;
+        return ErrorResponse.builder(e,HttpStatus.BAD_REQUEST,e.getMessage()).build();
     }
 }
