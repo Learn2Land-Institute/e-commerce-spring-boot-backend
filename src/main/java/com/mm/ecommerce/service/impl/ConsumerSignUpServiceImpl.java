@@ -2,6 +2,7 @@ package com.mm.ecommerce.service.impl;
 
 import com.mm.ecommerce.adapter.ConsumerAdapter;
 import com.mm.ecommerce.dto.ConsumerSignUpDTO;
+import com.mm.ecommerce.expection.ConsumerSignUpException;
 import com.mm.ecommerce.repository.ConsumerRepository;
 import com.mm.ecommerce.repository.UserRepository;
 import com.mm.ecommerce.service.ConsumerSignUpService;
@@ -11,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-@Transactional
 @Slf4j
 public class ConsumerSignUpServiceImpl implements ConsumerSignUpService {
 
@@ -22,39 +22,42 @@ public class ConsumerSignUpServiceImpl implements ConsumerSignUpService {
     @Autowired
     ConsumerAdapter consumerAdapter;
 
+    private static final String EMAIL_REGEX = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
 
     @Override
     public boolean signUpConsumer(ConsumerSignUpDTO consumerSignUpDTO) {
         log.info("Inside signUpConsumer method of CustomerSignUpServiceImpl.");
-        try {
-            if(!validationSignUpConsumer(consumerSignUpDTO)){
-                return false;
-            }
-            customerRepository.save(consumerAdapter.toConsumerEntity(consumerSignUpDTO));
-            return true;
-        } catch (Exception e) {
-            // Log the exception
-            log.error("An error occurred while doing sing up by consumer.");
-
-            // Rethrow the exception or handle it as needed
-            throw new RuntimeException("An error occurred while doing sing up by consumer", e);
-        }
+        validationSignUpConsumer(consumerSignUpDTO);
+        customerRepository.save(consumerAdapter.convertToDomain(consumerSignUpDTO));
+        return true;
     }
 
-    private boolean validationSignUpConsumer(ConsumerSignUpDTO consumerSignUpDTO){
+    private void validationSignUpConsumer(ConsumerSignUpDTO consumerSignUpDTO) {
+        //check null case for Email
+        if (consumerSignUpDTO.getEmail().isEmpty()) {
+            throw new ConsumerSignUpException("Email is empty.");
+        }
+        //check null case for password
+        if (consumerSignUpDTO.getPassword().isEmpty()) {
+            throw new ConsumerSignUpException("Password is empty.");
+        }
+        //check email format
+        if (!consumerSignUpDTO.getEmail().matches(EMAIL_REGEX)) {
+            throw new ConsumerSignUpException("Invalid Email format.");
+        }
         //check email and confirmed email
-        if(!(consumerSignUpDTO.getEmail().equals(consumerSignUpDTO.getConfirmedEmail()))){
-            return false;
+        if (!(consumerSignUpDTO.getEmail().equals(consumerSignUpDTO.getConfirmedEmail()))) {
+            throw new ConsumerSignUpException("Email and Confirmed Email must be same.");
         }
         //check password and confirmed password
-        if(!(consumerSignUpDTO.getPassword().equals(consumerSignUpDTO.getConfirmedPassword()))){
-            return false;
+        if (!(consumerSignUpDTO.getPassword().equals(consumerSignUpDTO.getConfirmedPassword()))) {
+            throw new ConsumerSignUpException("Password and Confirmed Password must be same.");
         }
         // Check if the email is already registered
-        if(userRepository.findByEmail(consumerSignUpDTO.getEmail())) {
-            return false; // Email is already taken
+        if (userRepository.findByEmail(consumerSignUpDTO.getEmail())) {
+            throw new ConsumerSignUpException("This Email is already exist.");
         }
-        return true;
+
     }
 
 }
