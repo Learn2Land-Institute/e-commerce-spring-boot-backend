@@ -1,32 +1,37 @@
 package com.mm.ecommerce.controller;
 
-import com.mm.ecommerce.domain.User;
 import com.mm.ecommerce.dto.requestDTO.UserReqDTO;
-import com.mm.ecommerce.dto.responseDTO.ResponseObj;
-import com.mm.ecommerce.dto.responseDTO.UserResDTO;
+import com.mm.ecommerce.security.TokenManager;
+import com.mm.ecommerce.service.JwtUserDetailsService;
 import com.mm.ecommerce.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/api/v1/users")
 public class UserController {
     @Autowired
-    private UserService userService;
-    @GetMapping("/login")
-    public ResponseEntity<?> getUserLogin(@RequestBody UserReqDTO userReqDTO){
-        try{
-            return ResponseEntity.ok(userService.getUserLogin(userReqDTO));
+    private JwtUserDetailsService userDetailsService;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private TokenManager tokenManager;
 
-        }catch (Exception ex){
-            return new ResponseEntity<>(ex, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
+    @Autowired
+    UserService userService;
+    @PostMapping("/login")
+    public ResponseEntity<?> saveUserLogin(@RequestBody UserReqDTO userReqDTO){
+        return new ResponseEntity<>(userService.getUserLogin(userReqDTO), HttpStatus.OK);
     }
+    @PostMapping("/hello")
+    public ResponseEntity<?> getAuthorization(@RequestBody UserReqDTO userReqDTO){
+        return new ResponseEntity<>(userDetailsService.loadUserByUsername(userReqDTO.getEmail()), HttpStatus.OK);
+    }
+
 
 }
