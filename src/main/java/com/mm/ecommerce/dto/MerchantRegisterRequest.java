@@ -5,6 +5,8 @@ import com.mm.ecommerce.domain.PhoneNumber;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Set;
+
 @Data
 public class MerchantRegisterRequest {
 
@@ -31,5 +33,6 @@ public class MerchantRegisterRequest {
     private String cardName;
     private String cvvNumber;
     private String expireDate;
+
 
 }

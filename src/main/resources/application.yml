@@ -20,3 +20,8 @@ logging:
     root: ERROR
     org:
       springframework: ERROR
+
+upload:
+  directory: uploads
+
+bank-service-url: http://localhost:9001/api/v1/getCardInfo

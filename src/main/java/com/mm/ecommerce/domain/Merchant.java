@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.*;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
@@ -45,5 +45,7 @@ public class Merchant extends User{
     @Embedded
     private AuditData auditData;
 
+    @OneToMany(cascade = CascadeType.PERSIST)
+    private List<File> merchantFileList;
 
 }
