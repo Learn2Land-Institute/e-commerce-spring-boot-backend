@@ -17,9 +17,9 @@ public abstract class User {
     private String email;
     @Column(nullable = false)
     private String password;
-
     private String firstName;
     private String lastName;
     private LocalDateTime lastLogin;
-
+    private String accessToken;
+    private Boolean tokenActive;
 }

@@ -22,13 +22,32 @@ public class AuthService implements UserDetailsService {
 
         Optional<User> userOptional = userRepository.findByEmail(email);
         // Converting userDetail to UserDetails
-        if(userOptional.isEmpty())
-            throw new UsernameNotFoundException("User not found " + email);
-
-
         return userOptional.map(UserInfoDetails::new)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found " + email));
     }
 
+    public void saveToken(String email, String token) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        // Converting userDetail to UserDetails
+        userOptional.ifPresent(user -> {
+            user.setAccessToken(token);
+            user.setTokenActive(true);
+            userRepository.save(user);
+        });
+    }
 
+    public Boolean isTokenActive(String token,String email){
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if(userOptional.isEmpty())
+            return false;
+        if(userOptional.get().getAccessToken()==null)
+            return false;
+        return userOptional.get().getAccessToken().equals(token) && userOptional.get().getTokenActive();
+    }
+
+    public void deactivateToken(String email) {
+        User user = userRepository.findByEmail(email).get();
+        user.setTokenActive(false);
+        userRepository.save(user);
+    }
 }
