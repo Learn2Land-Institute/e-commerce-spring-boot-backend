@@ -37,15 +37,15 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf().disable()
                 .authorizeHttpRequests()
-                .requestMatchers("/auth/generateToken").permitAll()
-                .and()
-                .authorizeHttpRequests().requestMatchers("/**").authenticated()
-                .and()
+                    .requestMatchers("/api/v1/auth/generateToken").permitAll()
+                    .and()
+                    .authorizeHttpRequests().requestMatchers("/**").authenticated()
+                    .and()
                 .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                    .and()
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
+                    .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
