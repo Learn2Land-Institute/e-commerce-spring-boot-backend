@@ -34,10 +34,6 @@ public class Merchant extends User{
     private String taxIdentificationNumber;
     private String businessRegistrationNumber;
 
-    // Payment information
-   // @OneToOne
-    private boolean bankValidation;
-
     // Approval Status
     @Enumerated(EnumType.STRING)
     private MerchantStatus merchantStatus;

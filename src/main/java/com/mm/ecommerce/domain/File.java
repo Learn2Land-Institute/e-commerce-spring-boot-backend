@@ -1,6 +1,6 @@
 package com.mm.ecommerce.domain;
 
-import com.mm.ecommerce.enums.MerchantFile;
+import com.mm.ecommerce.enums.MerchantFileType;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -12,7 +12,7 @@ public class File {
     private int id;
 
     @Enumerated(EnumType.STRING)
-    private MerchantFile merchantFile;
+    private MerchantFileType merchantFile;
 
     private String fileName;
     private String filePath;

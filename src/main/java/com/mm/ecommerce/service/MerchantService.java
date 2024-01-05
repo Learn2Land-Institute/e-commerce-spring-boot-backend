@@ -1,11 +1,13 @@
 package com.mm.ecommerce.service;
 
+import com.mm.ecommerce.dto.MerchantDTO;
 import com.mm.ecommerce.dto.MerchantRegisterRequest;
-import com.mm.ecommerce.dto.MerchantRegisterResponse;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Map;
+import java.util.List;
 
 public interface MerchantService {
-    MerchantRegisterResponse registerMerchant(MerchantRegisterRequest merchantRegisterRequest, Map<String,MultipartFile> fileParts);
+    MerchantDTO registerMerchant(
+            MerchantRegisterRequest merchantRegisterRequest);
+
+    List<MerchantDTO> getAllMerchants();
 }

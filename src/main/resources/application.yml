@@ -21,7 +21,9 @@ logging:
     org:
       springframework: ERROR
 
-upload:
-  directory: uploads
+prefixdir: user.dir
+
+upload_download:
+  directory: upload_download
 
 bank-service-url: http://localhost:9001/api/v1/getCardInfo

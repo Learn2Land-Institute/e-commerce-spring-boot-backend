@@ -19,6 +19,6 @@ public class AddressDTO {
     private String postalCode;
 
     //State
-    private Integer stateId;
+    private State state;
 
 }

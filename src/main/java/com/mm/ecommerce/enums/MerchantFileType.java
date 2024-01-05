@@ -1,6 +1,6 @@
 package com.mm.ecommerce.enums;
 
-public enum MerchantFile {
+public enum MerchantFileType {
     BUSINESSDOC,
     DRIVINGLIC,
     PROOFADD

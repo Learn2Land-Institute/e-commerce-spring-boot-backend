@@ -2,13 +2,15 @@ package com.mm.ecommerce.service;
 
 import com.mm.ecommerce.domain.*;
 import com.mm.ecommerce.dto.*;
-import com.mm.ecommerce.enums.MerchantFile;
+import com.mm.ecommerce.enums.AddressType;
+import com.mm.ecommerce.enums.MerchantFileType;
 import com.mm.ecommerce.enums.MerchantStatus;
 import com.mm.ecommerce.exception.MerchantException;
 import com.mm.ecommerce.repository.MerchantRepository;
 import com.mm.ecommerce.repository.StateRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -19,15 +21,9 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,142 +38,61 @@ public class MerchantServiceImpl implements MerchantService {
     @Autowired
     RestTemplate restTemplate;
 
-    @Value("${upload.directory}")
-    private String uploadDirectory;
-
     @Value("${bank-service-url}")
     private String bankServiceUrl;
+
+    @Value("${upload_download.directory}")
+    private String dir;
+
+    @Value("${prefixdir}")
+    private String prefix;
 
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public MerchantRegisterResponse registerMerchant(MerchantRegisterRequest merchantRegisterRequest
-            , Map<String,MultipartFile> fileParts){
+    public MerchantDTO registerMerchant(
+            MerchantRegisterRequest merchantRegisterRequest){
         System.out.println("registerMerchant service");
 
         validateMerchantRegisterRequest(merchantRegisterRequest);
-
-        validateMerchantFiles(fileParts);
 
         //create bank info request
         BankInfoRequest bankInfoRequest = createBankInfoRequest(merchantRegisterRequest);
 
         // Validate bank information and get response
-        BankInfoResponse bankInfoResponse = validateBankInformation(bankInfoRequest);
-        System.out.println(bankInfoResponse.getAmount());
+     //   BankInfoResponse bankInfoResponse = validateBankInformation(bankInfoRequest);
+      //  System.out.println(bankInfoResponse.getAmount());
 
         // create and save merchant
-        Merchant merchant = mapMerchantRegisterRequestToMerchant(merchantRegisterRequest,fileParts);
+        merchantRegisterRequest.setPassword(passwordEncoder.encode(merchantRegisterRequest.getPassword()));
+        merchantRegisterRequest.setMerchantStatus(MerchantStatus.New);
+        String path = String.valueOf(Paths.get(System.getProperty(this.prefix), this.dir));
+        merchantRegisterRequest.setMerchantFileList(
+                merchantRegisterRequest.getMerchantFileList().stream().peek(
+                        fileDTO -> fileDTO.setFilePath(path))
+                        .collect(Collectors.toList()));
 
-        merchantRepository.save(merchant);
+        ModelMapper modelMapper = new ModelMapper();
 
-        MerchantRegisterResponse merchantRegisterResponse = new MerchantRegisterResponse();
-        merchantRegisterResponse.setMsg("success"); //will improve later
-        return merchantRegisterResponse;
+        return modelMapper.map(merchantRepository.save(modelMapper.map(merchantRegisterRequest,Merchant.class)),MerchantDTO.class);
+
+//        MerchantRegisterResponse merchantRegisterResponse = new MerchantRegisterResponse();
+//        merchantRegisterResponse.setMsg("success"); //will improve later
+//        return merchantRegisterResponse;
 
     }
 
-    private List<File> mapSaveFiles(Map<String, MultipartFile> fileParts) {
-        List<File> fileList = new ArrayList<>();
-
-        // Create a Path object for the directory
-        Path directory = Paths.get(System.getProperty("user.dir"), this.uploadDirectory);
-
-        try {
-            // Create directory if it does not exist
-            if (!Files.exists(directory)) {
-                Files.createDirectory(directory);
-            }
-
-            for (Map.Entry<String, MultipartFile> entry : fileParts.entrySet()) {
-                System.out.println("service saveFiles loop");
-
-                String fileName = System.currentTimeMillis() + "_" + entry.getValue().getOriginalFilename();
-                File file = new File();
-
-                // Map key to enum
-                file.setMerchantFile(MerchantFile.valueOf(entry.getKey().toUpperCase()));
-
-                file.setFileName(fileName);
-                file.setFilePath(String.valueOf(directory));
-                fileList.add(file);
-
-                // Create a Path object for the destination file
-                Path destinationPath = Paths.get(directory.toString(), fileName);
-
-                // Copy file to destination
-                Files.copy(entry.getValue().getInputStream(), destinationPath);
-            }
-
-            System.out.println("Files are saved successfully in " + directory);
-            return fileList;
-        } catch (IOException | IllegalArgumentException ex) {
-            throw new MerchantException("Error processing files: " + ex.getMessage());
-        }
-    }
-
-    private Merchant mapMerchantRegisterRequestToMerchant(MerchantRegisterRequest merchantRegisterRequest
-            , Map<String,MultipartFile> fileParts) {
-        Merchant merchant = new Merchant();
-        merchant.setFirstName(merchantRegisterRequest.getFirstName());
-        merchant.setLastName(merchantRegisterRequest.getLastName());
-        merchant.setEmail(merchantRegisterRequest.getEmail());
-        String encryptedPassword = passwordEncoder.encode(merchantRegisterRequest.getPassword());
-        merchant.setPassword(encryptedPassword);
-        merchant.setBusinessName(merchantRegisterRequest.getBusinessName());
-        merchant.setBusinessType(merchantRegisterRequest.getBusinessType());
-        merchant.setIndustry(merchantRegisterRequest.getIndustry());
-
-        List<File> fileList = mapSaveFiles(fileParts);
-
-        List<Address> addressList = mapAddressList(merchantRegisterRequest.getAddressList());
-        merchant.setAddressList(addressList);
-
-        List<PhoneNumber> phoneNumberList = mapPhoneNumberList(merchantRegisterRequest.getPhoneNumberList());
-        merchant.setPhoneNumberList(phoneNumberList);
-
-        merchant.setTaxIdentificationNumber(merchantRegisterRequest.getTaxIdentificationNumber());
-        merchant.setBusinessRegistrationNumber(merchantRegisterRequest.getBusinessRegistrationNumber());
-        merchant.setMerchantStatus(MerchantStatus.New);
-        merchant.setMerchantFileList(fileList);
-
-        return merchant;
-    }
-
-    private List<Address> mapAddressList(List<AddressDTO> addressRequstList){
-        return addressRequstList.stream()
-                .map(this::mapAddress).collect(Collectors.toList());
-    }
-
-    private Address mapAddress(AddressDTO addressdto){
-        Address address = new Address();
-        address.setLine1(addressdto.getLine1());
-        address.setLine2(addressdto.getLine2());
-        address.setCity(addressdto.getCity());
-        address.setPostalCode(addressdto.getPostalCode());
-        address.setAddressType(addressdto.getAddressType());
-        State state = getStateById(addressdto.getStateId());
-        address.setState(state);
-        return address;
+    @Transactional
+    public List<MerchantDTO> getAllMerchants(){
+        ModelMapper modelMapper = new ModelMapper();
+        return merchantRepository.findAll().stream()
+                .map(merchant -> modelMapper.map(merchant,MerchantDTO.class))
+                .collect(Collectors.toList());
     }
 
     private State getStateById(Integer stateId){
         return stateRepository.findById(stateId)
                 .orElseThrow(() -> new MerchantException("State not found with id: " + stateId));
-    }
-
-    private List<PhoneNumber> mapPhoneNumberList(List<PhoneDTO> phoneDTOList){
-
-        return phoneDTOList.stream()
-                .map(this::mapPhoneNumber).collect(Collectors.toList());
-    }
-
-    private PhoneNumber mapPhoneNumber(PhoneDTO phoneDTO){
-        PhoneNumber phone = new PhoneNumber();
-        phone.setPhoneNumber(phoneDTO.getPhoneNumber());
-        phone.setPhoneNumberType(phoneDTO.getPhoneNumberType());
-        phone.setDefaultPhoneNumber(phoneDTO.isDefaultPhoneNumber());
-        return phone;
     }
 
     private BankInfoRequest createBankInfoRequest(MerchantRegisterRequest merchantRegisterRequest){
@@ -234,9 +149,9 @@ public class MerchantServiceImpl implements MerchantService {
         if(merchantRegisterRequest.getIndustry() == null || merchantRegisterRequest.getIndustry().trim().isEmpty()){
             throw new MerchantException("Industry is required");
         }
-        if(merchantRegisterRequest.getAddressList() == null || merchantRegisterRequest.getAddressList().isEmpty()){
-            throw new MerchantException("Address is required");
-        }
+
+        validateMerchantAddress(merchantRegisterRequest);
+
         if(merchantRegisterRequest.getPhoneNumberList() == null || merchantRegisterRequest.getPhoneNumberList().isEmpty()){
             throw new MerchantException("PhoneNumber is required");
         }
@@ -246,20 +161,55 @@ public class MerchantServiceImpl implements MerchantService {
         if(merchantRegisterRequest.getBusinessRegistrationNumber() == null || merchantRegisterRequest.getBusinessRegistrationNumber().trim().isEmpty()){
             throw new MerchantException("Business Registration is required");
         }
+
+        validateMerchantFiles(merchantRegisterRequest);
     }
 
-    private void validateMerchantFiles(Map<String,MultipartFile> fileParts){
-        System.out.println(fileParts.entrySet().size());
-        if(fileParts.entrySet().size()!=3){
+    private void validateMerchantAddress(MerchantRegisterRequest merchantRegisterRequest){
+        System.out.println("inside validateMerchantAddress method");
+        List<AddressDTO> addressList = merchantRegisterRequest.getAddressList();
+        if(addressList == null || addressList.isEmpty()){
+            throw new MerchantException("Address is required");
+        }
+        addressList.forEach(address -> {
+            if(address.getAddressType() == null){
+                throw new MerchantException("AddressType is required");
+            }
+            if(!(address.getAddressType().name().equalsIgnoreCase(AddressType.BILLING.name())
+                    || address.getAddressType().name().equalsIgnoreCase(AddressType.PHYSICAL.name())
+            )){
+                throw new MerchantException("AddressType is wrong");
+            }
+            State state = getStateById(address.getState().getId());
+            if(!state.getId().equals(address.getState().getId())){
+                throw new MerchantException("StateId is wrong");
+            }
+        });
+
+    }
+
+    private void validateMerchantFiles(MerchantRegisterRequest merchantRegisterRequest){
+        System.out.println("inside validateMerchantFiles method");
+        //check files
+        List<FileDTO> fileLists = merchantRegisterRequest.getMerchantFileList();
+        if(fileLists == null || fileLists.isEmpty()){
+            throw new MerchantException("MerchantFiles are required");
+        }
+        if(fileLists.size() != 3){
             throw new MerchantException("files' count must be 3");
         }
-        for(Map.Entry<String, MultipartFile> entry : fileParts.entrySet()){
-            String key = entry.getKey();
-            if(!(key.equalsIgnoreCase(String.valueOf(MerchantFile.BUSINESSDOC)) ||
-            key.equalsIgnoreCase(String.valueOf(MerchantFile.DRIVINGLIC)) ||
-            key.equalsIgnoreCase(String.valueOf(MerchantFile.PROOFADD)))){
-                throw new MerchantException("Upload document "+entry.getKey()+" is wrong");
+        fileLists.forEach(file-> {
+            if(file.getMerchantFileType() == null){
+                throw new MerchantException("MerchantFileType is required");
             }
-        }
+            if(!(file.getMerchantFileType().name().equalsIgnoreCase(MerchantFileType.BUSINESSDOC.name())
+                    || file.getMerchantFileType().name().equalsIgnoreCase(MerchantFileType.DRIVINGLIC.name())
+                    || file.getMerchantFileType().name().equalsIgnoreCase(MerchantFileType.PROOFADD.name()))){
+                throw new MerchantException("Upload document is wrong");
+            }
+
+        });
     }
+
+
 }
