@@ -16,7 +16,6 @@ public class AuthService implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
-    //private final PasswordEncoder encoder;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -26,19 +25,10 @@ public class AuthService implements UserDetailsService {
         if(userOptional.isEmpty())
             throw new UsernameNotFoundException("User not found " + email);
 
-        UserDetails userDetails = new UserInfoDetails(userOptional.get());
-        System.out.println(userDetails);
-        return userDetails;
 
-        /*return userOptional.map(UserInfoDetails::new)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found " + email));*/
+        return userOptional.map(UserInfoDetails::new)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found " + email));
     }
-
-//    public String addUser(UserInfo userInfo) {
-//        userInfo.setPassword(encoder.encode(userInfo.getPassword()));
-//        repository.save(userInfo);
-//        return "User Added Successfully";
-//    }
 
 
 }
