@@ -1,11 +1,17 @@
 package com.mm.ecommerce.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public abstract class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
