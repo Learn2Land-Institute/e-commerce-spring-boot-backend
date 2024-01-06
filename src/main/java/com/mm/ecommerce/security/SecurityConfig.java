@@ -18,7 +18,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
                 .authorizeRequests(authorize -> authorize
-                                .requestMatchers("/consumers/signUp/").permitAll()
+                                .requestMatchers("/consumers/signUp","/consumers/profile/{userID}","/consumers/{userID}").permitAll()
                         // Add other antMatchers and configurations as needed
                 )
                 .sessionManagement(session -> session
