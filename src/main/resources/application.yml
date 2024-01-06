@@ -12,7 +12,3 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-  activemq:
-    broker-url: tcp://localhost:61616
-    user: admin
-    password: admin
