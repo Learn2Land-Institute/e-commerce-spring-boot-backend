@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 @Data
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "user", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

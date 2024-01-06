@@ -9,5 +9,5 @@ public interface ConsumerSignUpService {
 
     boolean updateConsumerProfile(String userID, ConsumerRequestDTO consumerRequestDTO);
 
-    ConsumerResponseDTO getConsumerProfile(String userID);
+    ConsumerResponseDTO getConsumerProfile(String userID, String authorizationHeader);
 }
