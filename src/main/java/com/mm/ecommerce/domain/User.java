@@ -6,8 +6,9 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 @Data
+@Inheritance(strategy = InheritanceType.JOINED)
+@Table(name = "user", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
