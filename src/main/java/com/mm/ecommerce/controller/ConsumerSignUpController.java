@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,9 +44,10 @@ public class ConsumerSignUpController {
     }
     @GetMapping ("/{userID}")
     @Transactional
-    public ResponseEntity<ConsumerResponseDTO> getConsumerProfile(@PathVariable String userID) {
+    @PreAuthorize("hasAnyAuthority('ROLE_CONSUMER', 'ROLE_SYSTEM_ADMIN')")
+    public ResponseEntity<ConsumerResponseDTO> getConsumerProfile(@PathVariable String userID, @RequestHeader("Authorization") String authorizationHeader) {
         log.info("Inside getConsumerProfile method of ConsumerSignUpController.");
-        ConsumerResponseDTO consumerResponseDTO = customerSignUpService.getConsumerProfile(userID);
+        ConsumerResponseDTO consumerResponseDTO = customerSignUpService.getConsumerProfile(userID,authorizationHeader);
         return consumerResponseDTO!=null ?
                 ResponseEntity.ok(consumerResponseDTO):
                 ResponseEntity.status(HttpStatus.NOT_FOUND).build();

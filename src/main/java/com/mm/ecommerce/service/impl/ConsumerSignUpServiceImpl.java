@@ -2,14 +2,18 @@ package com.mm.ecommerce.service.impl;
 
 import com.mm.ecommerce.adapter.ConsumerAdapter;
 import com.mm.ecommerce.domain.Consumer;
+import com.mm.ecommerce.domain.User;
 import com.mm.ecommerce.dto.Card;
 import com.mm.ecommerce.dto.ConsumerDTO;
 import com.mm.ecommerce.dto.ConsumerRequestDTO;
 import com.mm.ecommerce.dto.ConsumerResponseDTO;
+import com.mm.ecommerce.enums.UserRole;
 import com.mm.ecommerce.expection.ConsumerSignUpException;
 import com.mm.ecommerce.repository.ConsumerRepository;
 import com.mm.ecommerce.repository.UserRepository;
+import com.mm.ecommerce.service.AuthService;
 import com.mm.ecommerce.service.ConsumerSignUpService;
+import com.mm.ecommerce.service.JwtService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +37,27 @@ public class ConsumerSignUpServiceImpl implements ConsumerSignUpService {
     private ConsumerAdapter consumerAdapter;
     @Autowired
     private RestTemplate restTemplate;
-
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private AuthService authService;
     private static final String EMAIL_REGEX = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+
+    public boolean checkCurrentUser(String userID, String authorizationHeader) {
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer")) {
+            String token = authorizationHeader.substring(7);
+            String email = jwtService.extractUsername(token);
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new ConsumerSignUpException("Invalid User."));
+            String role = UserRole.getAuthorities(user).get(0).getAuthority().toString();
+            if(role.equals(UserRole.SYSTEM_ADMIN.getRoleName())){
+                return true;
+            }
+            if (user.getUserID().equals(userID)){
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Override
     public boolean signUpConsumer(ConsumerDTO consumerSignUpDTO) {
@@ -52,8 +75,8 @@ public class ConsumerSignUpServiceImpl implements ConsumerSignUpService {
         validationUpdateConsumerProfile(consumerRequestDTO.getConsumerDTO());
         validationSignUpConsumer(consumerRequestDTO.getConsumerDTO());
         //if there have payment information, check payment validation
-        if(consumerRequestDTO.getCard() != null){
-            Card card=validationForPaymentMethod(consumerRequestDTO.getCard());
+        if (consumerRequestDTO.getCard() != null) {
+            Card card = validationForPaymentMethod(consumerRequestDTO.getCard());
             consumerRequestDTO.getConsumerDTO().setCardNumber(card.getCardNumber());
         }
         consumerRepository.save(consumerAdapter.convertToDomain(consumerRequestDTO.getConsumerDTO()));
@@ -61,8 +84,11 @@ public class ConsumerSignUpServiceImpl implements ConsumerSignUpService {
     }
 
     @Override
-    public ConsumerResponseDTO getConsumerProfile(String userID) {
+    public ConsumerResponseDTO getConsumerProfile(String userID, String authorizationHeader) {
         log.info("Inside getConsumerProfile method of CustomerSignUpServiceImpl.");
+        if(!checkCurrentUser(userID, authorizationHeader)){
+            throw new ConsumerSignUpException("Invalid User.");
+        }
         Optional<Consumer> consumerOptional = consumerRepository.findById(userID);
         if (consumerOptional.isPresent()) {
             return consumerAdapter.convertToConsumerResponseDTO(consumerOptional.get());
@@ -93,11 +119,10 @@ public class ConsumerSignUpServiceImpl implements ConsumerSignUpService {
             throw new ConsumerSignUpException("Password and Confirmed Password must be same.");
         }
         // Check if the email is already registered
-        if (consumerSignUpDTO.getUserID()==null && userRepository.findByEmail(consumerSignUpDTO.getEmail())) {
+        if (consumerSignUpDTO.getUserID() == null && userRepository.isValidUserByEmail(consumerSignUpDTO.getEmail())) {
             throw new ConsumerSignUpException("This Email is already exist.");
-        }
-        else{
-            if(userRepository.findByEmailNotID(consumerSignUpDTO.getEmail(),consumerSignUpDTO.getUserID())){
+        } else {
+            if (userRepository.isValidUserByEmailNotID(consumerSignUpDTO.getEmail(), consumerSignUpDTO.getUserID())) {
                 throw new ConsumerSignUpException("This Email is already exist.");
             }
         }
@@ -129,13 +154,13 @@ public class ConsumerSignUpServiceImpl implements ConsumerSignUpService {
     }
 
     private Card validationForPaymentMethod(Card card) {
-        try{
+        try {
             // Set up the request headers to create JSON body
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Card> cardHttpEntity = new HttpEntity<>(card, httpHeaders);
-            return restTemplate.postForObject("http://localhost:9009/api/v1/getCardInfo", cardHttpEntity,Card.class);
-        }catch (Exception e){
+            return restTemplate.postForObject("http://localhost:9009/api/v1/getCardInfo", cardHttpEntity, Card.class);
+        } catch (Exception e) {
             throw new ConsumerSignUpException("Payment Information has some issue.");
         }
 
