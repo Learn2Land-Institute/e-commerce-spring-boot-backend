@@ -16,6 +16,6 @@ public class Address {
     private String city;
 
     private String postalCode;
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne(cascade = CascadeType.ALL)
     private State state;
 }
