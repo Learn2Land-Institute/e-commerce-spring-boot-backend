@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,10 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@CrossOrigin
 @RequestMapping(URLConstants.MERCHANT_ENDPOINTS)
 public class MerchantController {
     @Autowired
@@ -32,9 +31,9 @@ public class MerchantController {
     @Value("${prefixdir}")
     private String prefix;
 
-    @PostMapping
+    @PostMapping("/signup")
     public ResponseEntity<?> registerMerchant(
-           @RequestBody MerchantRegisterRequest merchantRegisterRequest){
+         @RequestBody MerchantRegisterRequest merchantRegisterRequest){
         System.out.println("registerMerchant controller");
         return new ResponseEntity<>(merchantService.registerMerchant(
                 merchantRegisterRequest), HttpStatus.CREATED);
@@ -70,6 +69,7 @@ public class MerchantController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_SYSTEM_ADMIN')")
     public ResponseEntity<?> getAllMerchants(){
         return new ResponseEntity<>(merchantService.getAllMerchants(),HttpStatus.OK);
     }

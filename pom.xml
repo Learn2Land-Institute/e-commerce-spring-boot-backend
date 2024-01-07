@@ -16,7 +16,7 @@
 	<properties>
 		<spring-boot.version>2.6.2</spring-boot.version>
 		<java.version>17</java.version>
-		<lombok.version>1.18.22</lombok.version>
+<!--		<lombok.version>1.18.22</lombok.version>-->
 		<validation-api.version>2.0.1.Final</validation-api.version>
 	</properties>
 	<dependencies>
@@ -51,11 +51,6 @@
 			<groupId>org.modelmapper</groupId>
 			<artifactId>modelmapper</artifactId>
 			<version>3.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
