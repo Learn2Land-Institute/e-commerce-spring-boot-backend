@@ -1,27 +1,49 @@
 package com.mm.ecommerce.domain;
 
 import com.mm.ecommerce.enums.MerchantStatus;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Builder;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.*;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Merchant extends User{
+
+    // Business Information
+    private String businessName;
+    private String businessType;
+    private String industry;
+
+    // Contact information
+    @OneToMany(cascade = CascadeType.PERSIST)
+    private List<Address> addressList; //business location
+    @OneToMany(cascade = CascadeType.PERSIST)
+    private List<PhoneNumber> phoneNumberList;
+
+    //private String securityQuestion;
+    //private String securityAnswer;
+
+    //Business Identification
+    private String taxIdentificationNumber;
+    private String businessRegistrationNumber;
+
+    // Approval Status
     @Enumerated(EnumType.STRING)
     private MerchantStatus merchantStatus;
-    @OneToMany
-    private List<Address> addressList;
-    @OneToMany
-    private List<PhoneNumber> phoneNumberList;
+
+    @Embedded
+    private AuditData auditData;
+
+    @OneToMany(cascade = CascadeType.PERSIST)
+    private List<File> merchantFileList;
+
 }

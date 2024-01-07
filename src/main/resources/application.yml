@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/ecommerce?useSSL=false&serverTimezone=UTC
     username: root
-    password: heartstopper20
+    password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -12,3 +12,17 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+
+logging:
+  level:
+    root: ERROR
+    org:
+      springframework: ERROR
+
+prefixdir: user.dir
+
+upload_download:
+  directory: upload_download
+
+bank-service-url: http://localhost:9001/api/v1/getCardInfo
+

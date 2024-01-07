@@ -1,5 +1,6 @@
 package com.mm.ecommerce.domain;
 
+import com.mm.ecommerce.enums.AddressType;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -18,4 +19,7 @@ public class Address {
     private String postalCode;
     @ManyToOne(cascade = CascadeType.ALL)
     private State state;
+
+    @Enumerated
+    private AddressType addressType;
 }
