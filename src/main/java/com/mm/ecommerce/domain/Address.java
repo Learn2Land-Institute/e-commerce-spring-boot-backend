@@ -17,7 +17,7 @@ public class Address {
     private String city;
 
     private String postalCode;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     private State state;
 
     @Enumerated

@@ -16,7 +16,6 @@
 	<properties>
 		<spring-boot.version>2.6.2</spring-boot.version>
 		<java.version>17</java.version>
-<!--		<lombok.version>1.18.22</lombok.version>-->
 		<validation-api.version>2.0.1.Final</validation-api.version>
 	</properties>
 	<dependencies>

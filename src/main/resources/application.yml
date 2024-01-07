@@ -1,5 +1,3 @@
-server:
-  port: 9002
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/ecommerce?useSSL=false&serverTimezone=UTC
@@ -9,7 +7,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
@@ -27,3 +25,4 @@ upload_download:
   directory: upload_download
 
 bank-service-url: http://localhost:9001/api/v1/getCardInfo
+
