@@ -1,5 +1,6 @@
 package com.mm.ecommerce.controller;
 
+import com.mm.ecommerce.config.URLConstants;
 import com.mm.ecommerce.dto.AuthReponse;
 import com.mm.ecommerce.dto.AuthRequest;
 import com.mm.ecommerce.service.AuthService;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping(URLConstants.AUTH_ENDPOINTS)
 public class AuthController {
 
     @Autowired
@@ -60,7 +61,6 @@ public class AuthController {
     }
     @PostMapping("/logout")
     public String deactivateToken(@RequestHeader("Authorization") String authorizationHeader) {
-        //System.out.println(authorizationHeader);
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
             String email = jwtService.extractUsername(token);
