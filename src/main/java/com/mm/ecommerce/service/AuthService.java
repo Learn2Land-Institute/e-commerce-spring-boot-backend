@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -46,8 +48,11 @@ public class AuthService implements UserDetailsService {
     }
 
     public void deactivateToken(String email) {
-        User user = userRepository.findByEmail(email).get();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found " + email));
         user.setTokenActive(false);
+        user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
     }
 }
